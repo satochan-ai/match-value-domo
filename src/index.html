@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MatchValue｜SES市場価値スコアリングツール</title>
+  <meta name="description" content="スキルシートから市場価値スコア・想定単価・提案判定・強み・懸念点・営業コメントを自動分析するSES営業支援ツール">
+  <link rel="stylesheet" href="css/style.css">
+  <svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="gradient-excellent" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#10b981"/>
+        <stop offset="100%" stop-color="#34d399"/>
+      </linearGradient>
+      <linearGradient id="gradient-good" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#f59e0b"/>
+        <stop offset="100%" stop-color="#fbbf24"/>
+      </linearGradient>
+      <linearGradient id="gradient-poor" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#ef4444"/>
+        <stop offset="100%" stop-color="#f87171"/>
+      </linearGradient>
+    </defs>
+  </svg>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <div class="logo-text">
+          <h1>MatchValue</h1>
+          <p>SES市場価値スコアリングツール</p>
+        </div>
+      </div>
+      <span class="header-badge">MVP v1.0</span>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+
+    <!-- ===== 入力セクション ===== -->
+    <section class="input-section" aria-label="入力フォーム">
+      <div class="main-grid">
+
+        <!-- スキルシート入力 -->
+        <div class="card">
+          <div class="skill-sheet-label">
+            <div>
+              <span class="label-text">📄 スキルシート本文</span>
+              <span class="label-hint" style="margin-left: 8px;">テキストをそのまま貼り付けるか、ファイルを添付してください</span>
+            </div>
+            <div>
+              <input type="file" id="file-upload-input" accept=".txt,.pdf,.docx,.xlsx,.xls,.csv" style="display: none;">
+              <button id="file-upload-btn" class="btn-secondary" style="padding: 4px 10px; font-size: 11px;">📎 ファイル添付</button>
+            </div>
+          </div>
+          <div class="skill-sheet-wrapper">
+            <textarea
+              id="skill-sheet-input"
+              placeholder="スキルシートの本文をここに貼り付けてください。&#10;&#10;例：&#10;■ 基本情報&#10;IT経験：5年&#10;&#10;■ スキル&#10;Java, Spring Boot, AWS...&#10;&#10;■ 職務経歴&#10;2020年〜 株式会社○○ ..."
+              aria-label="スキルシート入力欄"
+            ></textarea>
+            <div class="input-footer">
+              <span class="char-count"><span id="char-count">0</span> 文字</span>
+              <div style="display: flex; gap: 8px;">
+                <select id="sample-selector" class="meta-input" style="padding: 4px 8px; width: auto; font-size: 12px; border-radius: var(--radius-sm);">
+                  <option value="high">高評価人材 (即提案想定)</option>
+                  <option value="standard">標準人材 (条件付き提案想定)</option>
+                  <option value="low">低評価人材 (見送り想定)</option>
+                </select>
+                <button id="load-sample-btn" class="btn-sample">サンプルを読み込む</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="error-message" role="alert"></div>
+
+          <div class="btn-row">
+            <button id="analyze-btn" class="btn-primary">
+              <span id="btn-spinner" class="btn-spinner"></span>
+              <span id="btn-text">市場価値を分析する</span>
+            </button>
+            <button id="reset-btn" class="btn-secondary">リセット</button>
+          </div>
+          <div style="margin-top:8px">
+            <span class="shortcut-hint"><kbd>Ctrl</kbd>+<kbd>Enter</kbd> で分析実行</span>
+          </div>
+        </div>
+
+        <!-- メタ情報入力 -->
+        <div class="card meta-panel">
+          <div class="card-title">人材情報（任意）</div>
+
+          <div class="meta-input-group">
+            <label for="input-age">年齢</label>
+            <input type="number" id="input-age" class="meta-input" placeholder="例：32" min="18" max="70">
+          </div>
+
+          <div class="meta-input-group">
+            <label for="input-rate">希望単価（万円）</label>
+            <input type="number" id="input-rate" class="meta-input" placeholder="例：70" min="20" max="200">
+          </div>
+
+          <div class="meta-input-group">
+            <label for="input-available">稼働開始時期</label>
+            <input type="text" id="input-available" class="meta-input" placeholder="例：即日〜、2025年6月〜">
+          </div>
+
+          <div class="meta-input-group">
+            <label for="input-remote">稼働形態</label>
+            <select id="input-remote" class="meta-input">
+              <option value="both">リモート・常駐 両対応可</option>
+              <option value="remote-only">フルリモートのみ</option>
+              <option value="onsite">常駐のみ</option>
+            </select>
+          </div>
+
+          <div class="meta-input-group">
+            <label for="input-nationality">国籍</label>
+            <select id="input-nationality" class="meta-input">
+              <option value="japanese">日本人</option>
+              <option value="foreign">外国籍</option>
+            </select>
+          </div>
+
+          <div class="meta-input-group">
+            <label for="input-japanese">日本語レベル</label>
+            <select id="input-japanese" class="meta-input">
+              <option value="native">ネイティブ</option>
+              <option value="business">ビジネスレベル</option>
+              <option value="basic">日常会話レベル</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 結果セクション ===== -->
+    <section id="result-section" aria-label="分析結果" aria-live="polite">
+
+      <!-- KPI サマリ -->
+      <div class="kpi-grid section-gap">
+        <!-- スコアカード -->
+        <div class="card kpi-card" id="card-score">
+          <div class="card-title">市場価値スコア</div>
+          <div class="gauge-wrapper">
+            <svg viewBox="0 0 200 200" aria-hidden="true">
+              <circle class="gauge-bg" cx="100" cy="100" r="90"/>
+              <circle id="score-circle" class="gauge-fill" cx="100" cy="100" r="90"
+                style="stroke-dasharray:565.5; stroke-dashoffset:565.5; stroke:url(#gradient-excellent)"/>
+            </svg>
+            <div class="gauge-center">
+              <span id="score-number" aria-label="スコア">0</span>
+              <span class="score-label">/ 100点</span>
+              <span id="market-value-label" class="market-value-label">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 判定・単価カード -->
+        <div class="card kpi-card kpi-details-card" id="card-verdict-rate">
+          <div class="kpi-detail-item">
+            <div class="kpi-label">提案判定</div>
+            <div id="verdict-badge" class="verdict-badge-large">—</div>
+          </div>
+          
+          <div class="kpi-detail-item">
+            <div class="kpi-label">書類通過率</div>
+            <div class="pass-rate-val" id="pass-rate">—</div>
+          </div>
+          
+          <div class="kpi-detail-item">
+            <div class="kpi-label">想定単価レンジ</div>
+            <div class="rate-row" id="rate-range">—</div>
+          </div>
+        </div>
+
+        <!-- 年収換算カード -->
+        <div class="card kpi-card kpi-details-card" id="card-income">
+          <div class="kpi-detail-item">
+            <div class="kpi-label">想定年収<br><span style="font-size:10px; font-weight:normal; color:var(--text-muted);">(フリーランス)</span></div>
+            <div class="rate-row" id="annual-income">—</div>
+          </div>
+          
+          <div class="kpi-detail-item">
+            <div class="kpi-label">手取り目安<br><span style="font-size:10px; font-weight:normal; color:var(--text-muted);">(※目安)</span></div>
+            <div class="rate-row" id="take-home-pay">—</div>
+          </div>
+          
+          <div class="kpi-detail-item">
+            <div class="kpi-label">会社員換算年収</div>
+            <div class="rate-row" id="employee-salary">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 単価妥当性アラート (希望単価入力時のみ) -->
+      <div id="rate-validity-section" class="section-gap" style="display: none;">
+        <div class="card" style="display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-left: 6px solid #ccc; flex-wrap: wrap; gap: 12px;" id="rate-validity-card">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="font-size: 14px; font-weight: 600; color: var(--text-secondary);">単価妥当性</div>
+            <div id="rate-validity-badge" class="validity-badge">—</div>
+          </div>
+          <div style="font-size: 13px; color: var(--text-secondary);">
+            <span style="font-weight: 600;">理由：</span><span id="rate-validity-reason">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- スコア内訳 -->
+      <div class="card section-gap" id="card-breakdown">
+        <div class="card-title">スコア内訳</div>
+        <div id="breakdown-bars"></div>
+      </div>
+
+      <!-- 強み・懸念点・改善ポイント -->
+      <div class="result-grid section-gap">
+        <div class="card" id="card-strengths">
+          <div class="card-title">💪 強み</div>
+          <ul id="strengths-list" class="result-list"></ul>
+        </div>
+        <div class="card" id="card-concerns">
+          <div class="card-title">⚠️ 懸念点</div>
+          <ul id="concerns-list" class="result-list"></ul>
+        </div>
+        <div class="card" id="card-improvements">
+          <div class="card-title">🎯 改善ポイント</div>
+          <ul id="improvements-list" class="result-list"></ul>
+        </div>
+      </div>
+
+      <!-- 検出スキル＆刺さる案件 -->
+      <div class="result-grid-2 section-gap">
+        <div class="card" id="card-skills">
+          <div class="card-title">🔍 検出されたスキル</div>
+          <div id="detected-skills" class="skill-tags"></div>
+        </div>
+        <div class="card" id="card-jobs">
+          <div class="card-title">🎯 刺さる案件タイプ</div>
+          <div id="job-types" class="job-types"></div>
+        </div>
+      </div>
+
+      <!-- 判定理由 -->
+      <div class="card section-gap" id="card-reasoning">
+        <div class="card-title">🔬 判定理由</div>
+
+        <!-- 提案判定の理由 -->
+        <div class="reasoning-block">
+          <div class="reasoning-block-title" id="reasoning-verdict-title">
+            <span class="reasoning-icon">📋</span>提案判定の根拠
+          </div>
+          <ul id="verdict-rationale-list" class="rationale-list"></ul>
+        </div>
+
+        <!-- 単価レンジの算出根拠 -->
+        <div class="reasoning-block">
+          <div class="reasoning-block-title">
+            <span class="reasoning-icon">💰</span>単価レンジの算出根拠
+          </div>
+          <div id="rate-rationale-body" class="rate-rationale-body"></div>
+        </div>
+
+        <!-- スコア内訳の詳細理由 -->
+        <div class="reasoning-block">
+          <div class="reasoning-block-title">
+            <span class="reasoning-icon">📊</span>スコア内訳ごとの判定理由
+          </div>
+          <div id="breakdown-reasons-list" class="breakdown-reasons-list"></div>
+        </div>
+      </div>
+
+      <!-- 営業コメント -->
+      <div class="card section-gap" id="card-sales-comment">
+        <div class="card-title" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>📝 営業支援テキスト</span>
+          <button class="copy-btn copy-all-btn" id="copy-all-btn">まとめてコピー</button>
+        </div>
+        <div class="tab-bar">
+          <button class="tab-btn active" data-tab="sales" id="tab-sales">営業コメント（クライアント向け）</button>
+          <button class="tab-btn" data-tab="bp" id="tab-bp">BP配信文</button>
+        </div>
+
+        <div class="tab-panel active" data-tab="sales">
+          <div class="comment-header">
+            <span style="font-size:12px;color:var(--text-muted)">クライアントへの提案文（コピペ可）</span>
+            <button class="copy-btn" data-target="sales-comment-text" id="copy-sales-btn">📋 コピー</button>
+          </div>
+          <textarea id="sales-comment-text" class="comment-box" readonly></textarea>
+        </div>
+
+        <div class="tab-panel" data-tab="bp">
+          <div class="comment-header">
+            <span style="font-size:12px;color:var(--text-muted)">BP会社向け配信文（コピペ可）</span>
+            <button class="copy-btn" data-target="bp-distribution-text" id="copy-bp-btn">📋 コピー</button>
+          </div>
+          <textarea id="bp-distribution-text" class="comment-box" readonly></textarea>
+        </div>
+      </div>
+
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="container">
+    <p>MatchValue MVP v1.0 — SES営業支援ツール｜スコアは参考値です。最終判断は担当者にご確認ください。</p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script src="js/sampleData.js"></script>
+<script src="js/fileReader.js"></script>
+<script src="js/parser.js"></script>
+<script src="js/scorer.js"></script>
+<script src="js/judge.js"></script>
+<script src="js/generator.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
