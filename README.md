@@ -1,5 +1,7 @@
 # MatchValue ⚡
 
+🌐 **Live Demo (プレビュー):** [https://satochan-ai.github.io/match-value-domo/src/index.html](https://satochan-ai.github.io/match-value-domo/src/index.html)
+
 MatchValueは、エンジニアのスキルシートからSES市場における「市場価値スコア」「想定単価」「提案のしやすさ」などを自動分析する営業支援ツールです。
 営業担当者がスキルシートを読み込むだけで、技術的な強みや懸念点、クライアント向けのアピール文を瞬時に生成し、営業活動を強力にサポートします。
 
